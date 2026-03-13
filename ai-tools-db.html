@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuralVault — AI Tools Database</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#090b10;--surface:#0e1118;--surface2:#141720;--surface3:#1c2030;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --accent:#00e5ff;--green:#10b981;--red:#ef4444;--amber:#f59e0b;
+  --text:#e8eaf0;--muted:#6b7280;--muted2:#9ca3af;
+  --r:12px;--rs:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--surface);}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px;}
+#app{display:flex;min-height:100vh;}
+
+/* SIDEBAR */
+#sidebar{width:252px;min-width:252px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.logo-wrap{padding:22px 18px 18px;border-bottom:1px solid var(--border);}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;letter-spacing:-.5px;}
+.logo span{color:var(--accent);}
+.logo-sub{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;}
+.sb-section{padding:14px 10px 6px;}
+.sb-label{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;padding:0 8px;margin-bottom:5px;}
+.nav{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;transition:all .15s;font-size:13px;font-weight:500;color:var(--muted2);user-select:none;position:relative;}
+.nav:hover{background:var(--surface2);color:var(--text);}
+.nav.active{background:rgba(0,229,255,.08);color:var(--accent);}
+.nav.active::before{content:'';position:absolute;left:0;top:22%;bottom:22%;width:2px;background:var(--accent);border-radius:2px;}
+.nav-ic{width:15px;text-align:center;font-size:13px;}
+.nav-ct{margin-left:auto;background:var(--surface3);color:var(--muted2);font-family:'DM Mono',monospace;font-size:9.5px;padding:1px 6px;border-radius:20px;}
+.nav.active .nav-ct{background:rgba(0,229,255,.15);color:var(--accent);}
+
+/* SHEETS PANEL */
+.sheets-panel{margin-top:auto;border-top:1px solid var(--border);padding:14px;}
+.sp-title{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;}
+.sp-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted2);outline:none;transition:border-color .2s;margin-bottom:6px;}
+.sp-input:focus{border-color:var(--accent);}
+.sp-input::placeholder{color:var(--muted);}
+.sp-help-btn{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--accent);cursor:pointer;background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.2);border-radius:6px;padding:6px 10px;transition:all .15s;width:100%;justify-content:center;font-family:'Instrument Sans',sans-serif;font-weight:500;}
+.sp-help-btn:hover{background:rgba(0,229,255,.14);}
+.sp-status{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;}
+.sp-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.sp-status.ok{color:var(--green);}
+.sp-status.ok .sp-dot{background:var(--green);}
+
+/* MAIN */
+#main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
+#topbar{height:58px;min-height:58px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 22px;gap:14px;position:sticky;top:0;z-index:10;}
+#topbar h1{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;flex:1;white-space:nowrap;}
+.search-wrap{position:relative;flex:1;max-width:300px;}
+.search-ic{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none;}
+#searchInput{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:7px 12px 7px 32px;font-family:'Instrument Sans',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color .2s;}
+#searchInput:focus{border-color:var(--accent);}
+#searchInput::placeholder{color:var(--muted);}
+.view-tog{display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:3px;}
+.vbtn{width:28px;height:26px;border:none;border-radius:5px;background:none;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;}
+.vbtn.active{background:var(--surface3);color:var(--text);}
+.btn-new{display:flex;align-items:center;gap:7px;background:var(--accent);color:#000;border:none;border-radius:var(--rs);padding:8px 16px;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;white-space:nowrap;box-shadow:0 0 18px rgba(0,229,255,.3);}
+.btn-new:hover{transform:translateY(-1px);box-shadow:0 4px 22px rgba(0,229,255,.45);}
+
+/* CONTENT */
+#content{flex:1;overflow-y:auto;padding:22px;}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:26px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.25;}
+.stat-val{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;line-height:1;}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.8px;font-family:'DM Mono',monospace;}
+.stat-ic{position:absolute;right:14px;top:14px;font-size:18px;opacity:.2;}
+
+/* CATEGORY GROUP */
+.cat-group{margin-bottom:30px;}
+.cat-group-hdr{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.cat-group-label{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;white-space:nowrap;}
+.cat-group-line{flex:1;height:1px;background:var(--border);}
+.cat-group-count{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);padding:2px 8px;border-radius:20px;white-space:nowrap;}
+
+/* TOOLS GRID */
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;}
+.tools-list{display:flex;flex-direction:column;gap:7px;}
+
+/* TOOL CARD */
+.tool-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;animation:fadeUp .3s ease both;}
+.tool-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,229,255,.025) 0%,transparent 55%);opacity:0;transition:opacity .2s;}
+.tool-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.4);}
+.tool-card:hover::before{opacity:1;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+
+.card-top{display:flex;align-items:flex-start;gap:11px;margin-bottom:12px;}
+.avatar{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;flex-shrink:0;border:1px solid;}
+.card-info{flex:1;min-width:0;}
+.card-name{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.card-uses{font-size:12px;color:var(--muted2);margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5;}
+.card-actions{display:flex;gap:5px;flex-shrink:0;}
+.ic-btn{width:27px;height:27px;border:none;background:var(--surface2);border-radius:6px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s;}
+.ic-btn:hover{background:var(--surface3);color:var(--text);}
+.ic-btn.bm{color:var(--amber);}
+.ic-btn.del:hover{color:var(--red);}
+
+.card-features{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;}
+.feat-tag{font-size:11px;padding:2px 8px;border-radius:4px;background:var(--surface2);border:1px solid var(--border);color:var(--muted2);font-family:'DM Mono',monospace;}
+.card-spec{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:11px;}
+.spec-tag{font-size:10px;padding:2px 7px;border-radius:3px;font-family:'DM Mono',monospace;font-weight:500;}
+
+.card-footer{display:flex;align-items:center;gap:8px;border-top:1px solid var(--border);padding-top:10px;}
+.card-link{margin-left:auto;font-size:11px;color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:3px;transition:color .15s;}
+.card-link:hover{color:var(--accent);}
+.price-badge{font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:4px;}
+.price-free{background:rgba(16,185,129,.1);color:var(--green);border:1px solid rgba(16,185,129,.2);}
+.price-freemium{background:rgba(245,158,11,.1);color:var(--amber);border:1px solid rgba(245,158,11,.2);}
+.price-premium{background:rgba(167,139,250,.1);color:#a78bfa;border:1px solid rgba(167,139,250,.2);}
+
+/* LIST MODE */
+.tool-card.lm{display:grid;grid-template-columns:40px 1fr auto auto auto;align-items:center;gap:14px;padding:12px 16px;}
+.tool-card.lm .card-top,.tool-card.lm .card-features,.tool-card.lm .card-spec,.tool-card.lm .card-footer{display:none;}
+.lm-name{font-family:'Syne',sans-serif;font-weight:700;font-size:13.5px;}
+.lm-uses{font-size:11.5px;color:var(--muted2);margin-top:2px;}
+.lm-acts{display:flex;gap:6px;}
+
+/* EMPTY */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;grid-column:1/-1;}
+.empty-ic{font-size:40px;opacity:.3;margin-bottom:12px;}
+.empty-t{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--muted2);margin-bottom:6px;}
+.empty-s{font-size:12px;color:var(--muted);}
+
+/* CATEGORY COLORS */
+.cc-coding{color:#60a5fa;} .cc-generative{color:#f472b6;} .cc-writing{color:#fbbf24;}
+.cc-productivity{color:#34d399;} .cc-research{color:#fb923c;} .cc-audio{color:#a78bfa;}
+.cc-video{color:#f87171;} .cc-other{color:var(--muted2);}
+.av-coding{color:#60a5fa;background:rgba(96,165,250,.1);border-color:rgba(96,165,250,.25);}
+.av-generative{color:#f472b6;background:rgba(244,114,182,.1);border-color:rgba(244,114,182,.25);}
+.av-writing{color:#fbbf24;background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.25);}
+.av-productivity{color:#34d399;background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.25);}
+.av-research{color:#fb923c;background:rgba(251,146,60,.1);border-color:rgba(251,146,60,.25);}
+.av-audio{color:#a78bfa;background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.25);}
+.av-video{color:#f87171;background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.25);}
+.av-other{color:var(--muted2);background:var(--surface3);border-color:var(--border);}
+.sp-coding{background:rgba(96,165,250,.1);color:#60a5fa;}
+.sp-generative{background:rgba(244,114,182,.1);color:#f472b6;}
+.sp-writing{background:rgba(251,191,36,.1);color:#fbbf24;}
+.sp-productivity{background:rgba(52,211,153,.1);color:#34d399;}
+.sp-research{background:rgba(251,146,60,.1);color:#fb923c;}
+.sp-audio{background:rgba(167,139,250,.1);color:#a78bfa;}
+.sp-video{background:rgba(248,113,113,.1);color:#f87171;}
+.sp-other{background:var(--surface3);color:var(--muted2);}
+
+/* MODAL */
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;animation:bIn .18s ease;}
+@keyframes bIn{from{opacity:0;}to{opacity:1;}}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;animation:mUp .22s ease;}
+@keyframes mUp{from{transform:translateY(18px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.modal-hdr{padding:22px 22px 0;display:flex;align-items:flex-start;gap:10px;}
+.modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;flex:1;}
+.modal-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.modal-x{width:30px;height:30px;border:1px solid var(--border);background:var(--surface2);border-radius:7px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;flex-shrink:0;}
+.modal-x:hover{color:var(--text);}
+.modal-body{padding:18px 22px 22px;}
+.fg{margin-bottom:14px;}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+label{display:block;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
+input[type=text],input[type=url],textarea,select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:9px 11px;font-family:'Instrument Sans',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color .2s;resize:none;}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);}
+input::placeholder,textarea::placeholder{color:var(--muted);}
+select option{background:var(--surface2);}
+textarea{min-height:72px;}
+.feats-wrap{display:flex;flex-direction:column;gap:5px;}
+.feat-row{display:flex;gap:5px;}
+.feat-row input{flex:1;}
+.feat-add{width:34px;height:36px;border:1px solid var(--border);background:var(--surface2);border-radius:var(--rs);color:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .15s;flex-shrink:0;}
+.feat-add:hover{background:var(--surface3);}
+.feats-list{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;}
+.ft{background:var(--surface3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11.5px;color:var(--muted2);display:flex;align-items:center;gap:4px;}
+.ft button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:10px;padding:0;transition:color .15s;}
+.ft button:hover{color:var(--red);}
+.fetch-bar{display:flex;align-items:center;gap:9px;padding:9px 12px;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.18);border-radius:var(--rs);font-size:12px;color:var(--accent);margin-bottom:14px;}
+.spin{width:13px;height:13px;border:2px solid rgba(0,229,255,.25);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0;}
+@keyframes sp{to{transform:rotate(360deg);}}
+.modal-ftr{padding:0 22px 22px;display:flex;gap:9px;justify-content:flex-end;}
+.btn-cancel{padding:9px 18px;border:1px solid var(--border);background:none;border-radius:var(--rs);color:var(--muted);cursor:pointer;font-family:'Instrument Sans',sans-serif;font-size:13px;font-weight:500;transition:all .15s;}
+.btn-cancel:hover{border-color:var(--border2);color:var(--text);}
+.btn-save{padding:9px 18px;border:none;background:var(--accent);border-radius:var(--rs);color:#000;cursor:pointer;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;transition:opacity .15s;}
+.btn-save:hover{opacity:.88;}
+
+/* SHEETS GUIDE MODAL */
+.guide-modal{max-width:560px;}
+.guide-step{display:flex;gap:13px;padding:14px 0;border-bottom:1px solid var(--border);}
+.guide-step:last-child{border-bottom:none;}
+.step-num{width:26px;height:26px;border-radius:50%;background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.25);color:var(--accent);font-family:'Syne',sans-serif;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.step-title{font-family:'Syne',sans-serif;font-weight:600;font-size:13px;margin-bottom:5px;}
+.step-desc{font-size:12px;color:var(--muted2);line-height:1.6;}
+.step-desc strong{color:var(--text);}
+.code-block{background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:'DM Mono',monospace;font-size:10.5px;color:var(--accent);margin-top:8px;overflow-x:auto;white-space:pre;line-height:1.5;}
+.copy-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.2);border-radius:5px;padding:4px 10px;font-size:11px;color:var(--accent);cursor:pointer;transition:all .15s;margin-top:6px;font-family:'Instrument Sans',sans-serif;}
+.copy-btn:hover{background:rgba(0,229,255,.15);}
+
+/* DETAIL */
+.detail-modal{max-width:620px;}
+.d-hero{padding:22px 22px 0;display:flex;gap:14px;align-items:flex-start;}
+.d-av{width:54px;height:54px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:20px;flex-shrink:0;border:1px solid;}
+.d-name{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;}
+.d-uses{color:var(--muted2);font-size:13px;margin-top:5px;line-height:1.6;}
+.d-body{padding:18px 22px;}
+.d-sec{margin-bottom:18px;}
+.d-sec-title{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:9px;display:flex;align-items:center;gap:8px;}
+.d-sec-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.d-feats{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.d-feat{display:flex;align-items:flex-start;gap:7px;font-size:12px;color:var(--muted2);background:var(--surface2);border-radius:6px;padding:7px 9px;}
+.d-feat::before{content:'◆';color:var(--accent);font-size:7px;margin-top:3px;flex-shrink:0;}
+.d-foot{padding:14px 22px 22px;display:flex;gap:9px;align-items:center;border-top:1px solid var(--border);}
+.btn-visit{display:flex;align-items:center;gap:6px;padding:9px 16px;background:var(--accent);color:#000;border:none;border-radius:var(--rs);font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;text-decoration:none;transition:opacity .15s;}
+.btn-visit:hover{opacity:.85;}
+.btn-edit{padding:9px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);cursor:pointer;font-family:'Instrument Sans',sans-serif;font-size:13px;transition:all .15s;}
+.btn-edit:hover{border-color:var(--border2);}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:11px 15px;display:flex;align-items:center;gap:9px;font-size:12px;z-index:200;box-shadow:0 8px 28px rgba(0,0,0,.5);animation:tIn .25s ease,tOut .3s ease 2.7s forwards;}
+@keyframes tIn{from{transform:translateX(36px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+@keyframes tOut{to{opacity:0;transform:translateY(6px);}}
+.tdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.tdot.success{background:var(--green);}
+.tdot.error{background:var(--red);}
+.tdot.loading{background:var(--accent);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+@media(max-width:768px){
+  #sidebar{display:none;}
+  .stats-row{grid-template-columns:repeat(2,1fr);}
+  .fr{grid-template-columns:1fr;}
+  .d-feats{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="logo-wrap">
+    <div class="logo">Neural<span>Vault</span></div>
+    <div class="logo-sub">AI Tools Database</div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Browse</div>
+    <div class="nav active" onclick="setFilter('all',this)"><span class="nav-ic">⬡</span>All Tools<span class="nav-ct" id="ct-all">0</span></div>
+    <div class="nav" onclick="setFilter('bookmarks',this)"><span class="nav-ic">★</span>Bookmarks<span class="nav-ct" id="ct-bookmarks">0</span></div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Categories</div>
+    <div class="nav" onclick="setFilter('coding',this)"><span class="nav-ic cc-coding">⟨/⟩</span>Coding<span class="nav-ct" id="ct-coding">0</span></div>
+    <div class="nav" onclick="setFilter('generative',this)"><span class="nav-ic cc-generative">✦</span>Generative AI<span class="nav-ct" id="ct-generative">0</span></div>
+    <div class="nav" onclick="setFilter('writing',this)"><span class="nav-ic cc-writing">✎</span>Writing<span class="nav-ct" id="ct-writing">0</span></div>
+    <div class="nav" onclick="setFilter('productivity',this)"><span class="nav-ic cc-productivity">⚡</span>Productivity<span class="nav-ct" id="ct-productivity">0</span></div>
+    <div class="nav" onclick="setFilter('research',this)"><span class="nav-ic cc-research">◎</span>Research<span class="nav-ct" id="ct-research">0</span></div>
+    <div class="nav" onclick="setFilter('audio',this)"><span class="nav-ic cc-audio">♪</span>Audio<span class="nav-ct" id="ct-audio">0</span></div>
+    <div class="nav" onclick="setFilter('video',this)"><span class="nav-ic cc-video">▶</span>Video<span class="nav-ct" id="ct-video">0</span></div>
+    <div class="nav" onclick="setFilter('other',this)"><span class="nav-ic">◌</span>Other<span class="nav-ct" id="ct-other">0</span></div>
+  </div>
+  <div class="sheets-panel">
+    <div class="sp-title">📋 Google Sheets Sync</div>
+    <input id="spWebhook" class="sp-input" placeholder="Apps Script Web App URL" oninput="saveCfg()">
+    <input id="spSheet" class="sp-input" placeholder='Sheet tab name (e.g. Tools)' oninput="saveCfg()">
+    <button class="sp-help-btn" onclick="openGuide()">How to connect →</button>
+    <div class="sp-status" id="spStatus"><div class="sp-dot"></div>Not configured</div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main id="main">
+  <div id="topbar">
+    <h1 id="pageTitle">All Tools</h1>
+    <div class="search-wrap">
+      <span class="search-ic">⌕</span>
+      <input type="text" id="searchInput" placeholder="Search name, features, tags…" oninput="render()">
+    </div>
+    <div class="view-tog">
+      <button class="vbtn active" id="vGrid" onclick="setView('grid')" title="Grid">⊞</button>
+      <button class="vbtn" id="vList" onclick="setView('list')" title="List">☰</button>
+    </div>
+    <button class="btn-new" onclick="openNew()">+ New Tool</button>
+  </div>
+  <div id="content">
+    <div class="stats-row" id="statsRow"></div>
+    <div id="toolsWrap"></div>
+  </div>
+</main>
+</div>
+
+<!-- ADD / EDIT MODAL -->
+<div id="toolModal" class="backdrop" style="display:none" onclick="if(event.target===this)closeM('toolModal')">
+<div class="modal" onclick="event.stopPropagation()">
+  <div class="modal-hdr">
+    <div><div class="modal-title" id="mTitle">Add New Tool</div><div class="modal-sub">Type a name — AI will auto-fill everything else</div></div>
+    <button class="modal-x" onclick="closeM('toolModal')">✕</button>
+  </div>
+  <div class="modal-body">
+    <div id="fetchBar" class="fetch-bar" style="display:none"><div class="spin"></div><span id="fetchMsg">Fetching info…</span></div>
+    <div class="fg"><label>Tool Name *</label><input type="text" id="fName" placeholder="e.g. ChatGPT, Cursor, Runway…" oninput="nameTyped(this.value)"></div>
+    <div class="fr">
+      <div class="fg"><label>Category *</label>
+        <select id="fCat">
+          <option value="generative">Generative AI</option><option value="coding">Coding</option>
+          <option value="writing">Writing</option><option value="productivity">Productivity</option>
+          <option value="research">Research</option><option value="audio">Audio</option>
+          <option value="video">Video</option><option value="other">Other</option>
+        </select>
+      </div>
+      <div class="fg"><label>Pricing</label>
+        <select id="fPrice"><option value="free">Free</option><option value="freemium">Freemium</option><option value="premium">Premium</option></select>
+      </div>
+    </div>
+    <div class="fg"><label>Uses / Description *</label><textarea id="fUses" placeholder="What does this tool do and who is it for?"></textarea></div>
+    <div class="fg">
+      <label>Features</label>
+      <div class="feats-wrap">
+        <div class="feat-row">
+          <input type="text" id="featInp" placeholder="Add a feature, press +" onkeydown="if(event.key==='Enter')addFeat()">
+          <button class="feat-add" onclick="addFeat()">+</button>
+        </div>
+        <div class="feats-list" id="featsList"></div>
+      </div>
+    </div>
+    <div class="fg"><label>Specialization Tags <span style="color:var(--muted);font-family:'DM Mono',monospace;font-size:9px;text-transform:none;letter-spacing:0">(comma separated)</span></label><input type="text" id="fTags" placeholder="e.g. nlp, image-gen, code-completion"></div>
+    <div class="fg"><label>Website URL</label><input type="url" id="fWeb" placeholder="https://…"></div>
+  </div>
+  <div class="modal-ftr">
+    <button class="btn-cancel" onclick="closeM('toolModal')">Cancel</button>
+    <button class="btn-save" onclick="saveTool()">Save Tool</button>
+  </div>
+</div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div id="detailModal" class="backdrop" style="display:none" onclick="if(event.target===this)closeM('detailModal')">
+<div class="modal detail-modal" onclick="event.stopPropagation()" id="detailInner"></div>
+</div>
+
+<!-- SHEETS GUIDE MODAL -->
+<div id="sheetsModal" class="backdrop" style="display:none" onclick="if(event.target===this)closeM('sheetsModal')">
+<div class="modal guide-modal" onclick="event.stopPropagation()">
+  <div class="modal-hdr">
+    <div><div class="modal-title">Connect Google Sheets</div><div class="modal-sub">Free, no API key needed — uses Google Apps Script</div></div>
+    <button class="modal-x" onclick="closeM('sheetsModal')">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="guide-step">
+      <div class="step-num">1</div>
+      <div>
+        <div class="step-title">Create your Google Sheet</div>
+        <div class="step-desc">Go to <strong>sheets.google.com</strong> and create a new spreadsheet. Name the first sheet tab (e.g. <em>Tools</em>). Paste this header row in Row 1:</div>
+        <div class="code-block">Name	Uses	Features	Specialization	Website	Category	Pricing	Added</div>
+        <button class="copy-btn" onclick="copyT('Name\tUses\tFeatures\tSpecialization\tWebsite\tCategory\tPricing\tAdded')">📋 Copy headers</button>
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="step-num">2</div>
+      <div>
+        <div class="step-title">Add an Apps Script</div>
+        <div class="step-desc">In your Sheet: <strong>Extensions → Apps Script</strong>. Replace all code with this:</div>
+        <div class="code-block" id="scriptCode">const SHEET = "Tools"; // change to your sheet tab name
+
+function doPost(e) {
+  try {
+    const d = JSON.parse(e.postData.contents);
+    const sheet = SpreadsheetApp
+      .getActiveSpreadsheet()
+      .getSheetByName(SHEET);
+    sheet.appendRow([
+      d.name, d.uses, d.features,
+      d.specialization, d.website,
+      d.category, d.pricing,
+      new Date().toLocaleString()
+    ]);
+    return ContentService
+      .createTextOutput(JSON.stringify({ok:true}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ok:false,err:err.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}</div>
+        <button class="copy-btn" onclick="copyT(document.getElementById('scriptCode').textContent)">📋 Copy script</button>
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="step-num">3</div>
+      <div>
+        <div class="step-title">Deploy as Web App</div>
+        <div class="step-desc">
+          Click <strong>Deploy → New deployment</strong><br>
+          Type: <strong>Web app</strong><br>
+          Execute as: <strong>Me</strong> &nbsp;|&nbsp; Who has access: <strong>Anyone</strong><br>
+          Click <strong>Deploy</strong> → authorize → copy the <strong>Web app URL</strong>
+        </div>
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="step-num">4</div>
+      <div>
+        <div class="step-title">Paste URL in the sidebar</div>
+        <div class="step-desc">Back in NeuralVault, paste the Web app URL into <strong style="color:var(--accent)">Apps Script Web App URL</strong> and type your sheet tab name. Every new tool you add will now sync to your spreadsheet automatically. ✓</div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-ftr"><button class="btn-cancel" onclick="closeM('sheetsModal')">Got it</button></div>
+</div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────
+let tools = JSON.parse(localStorage.getItem('nv3_tools')||'[]');
+let activeFilter='all', activeView='grid', editId=null, tmpFeats=[], nameTimer=null;
+
+const CATS=['coding','generative','writing','productivity','research','audio','video','other'];
+const CAT_LABELS={coding:'Coding',generative:'Generative AI',writing:'Writing',productivity:'Productivity',research:'Research',audio:'Audio',video:'Video',other:'Other'};
+const CAT_ICONS={coding:'⟨/⟩',generative:'✦',writing:'✎',productivity:'⚡',research:'◎',audio:'♪',video:'▶',other:'◌'};
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2);}
+function save(){localStorage.setItem('nv3_tools',JSON.stringify(tools));}
+function initials(n){return n.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'?';}
+
+// ─── SEED ────────────────────────────────────────────────
+function seed(){
+  if(tools.length)return;
+  tools=[
+    {id:uid(),name:'ChatGPT',category:'generative',pricing:'freemium',uses:'Conversational AI by OpenAI for writing, coding, answering questions, and analysis across any domain.',features:['Multi-turn chat','Code generation','Image understanding','Custom GPTs','Plugin ecosystem'],specialization:['nlp','chat','multimodal'],website:'https://chat.openai.com',bookmarked:true,ts:Date.now()},
+    {id:uid(),name:'Claude',category:'generative',pricing:'freemium',uses:'Anthropic\'s AI assistant excelling at long documents, nuanced reasoning, research, and safe, helpful conversations.',features:['200K context window','Document analysis','Coding','Artifacts','Research mode'],specialization:['nlp','long-context','reasoning'],website:'https://claude.ai',bookmarked:false,ts:Date.now()},
+    {id:uid(),name:'GitHub Copilot',category:'coding',pricing:'premium',uses:'AI pair programmer for IDEs that suggests code completions and generates entire functions from natural language comments.',features:['Inline completion','Chat interface','Multi-language support','Test generation','PR summaries'],specialization:['code-completion','ide','devtools'],website:'https://github.com/features/copilot',bookmarked:true,ts:Date.now()},
+    {id:uid(),name:'Cursor',category:'coding',pricing:'freemium',uses:'AI-first code editor built on VS Code — chat with your codebase, apply multi-file edits, and build features with natural language.',features:['Codebase chat','Multi-file edit','Tab autocomplete','Agent mode','VS Code compatible'],specialization:['code-editor','ai-native','ide'],website:'https://cursor.com',bookmarked:false,ts:Date.now()},
+    {id:uid(),name:'Perplexity AI',category:'research',pricing:'freemium',uses:'AI search engine that answers questions with real-time web data and always shows cited sources.',features:['Real-time search','Source citations','Follow-up questions','File upload','Spaces collaboration'],specialization:['search','citations','web-search'],website:'https://perplexity.ai',bookmarked:true,ts:Date.now()},
+    {id:uid(),name:'Midjourney',category:'generative',pricing:'premium',uses:'High-quality AI image generation from text prompts, producing stunning artistic and photorealistic visuals.',features:['Text-to-image','Style control','Upscaling','Variations','Discord bot'],specialization:['image-gen','art','creative'],website:'https://midjourney.com',bookmarked:false,ts:Date.now()},
+    {id:uid(),name:'ElevenLabs',category:'audio',pricing:'freemium',uses:'Ultra-realistic AI voice synthesis and cloning for voiceovers, podcasts, and audio content creation at scale.',features:['Voice cloning','Text-to-speech','29+ languages','Dubbing','Sound effects'],specialization:['tts','voice-clone','dubbing'],website:'https://elevenlabs.io',bookmarked:false,ts:Date.now()},
+    {id:uid(),name:'Notion AI',category:'productivity',pricing:'premium',uses:'AI assistant embedded in Notion for drafting documents, summarizing notes, and extracting action items.',features:['AI writing','Summarization','Action items','Translation','Q&A on docs'],specialization:['writing','notes','summarization'],website:'https://notion.so/product/ai',bookmarked:false,ts:Date.now()},
+    {id:uid(),name:'Runway',category:'video',pricing:'freemium',uses:'AI video generation and editing platform for creating professional video content from text prompts and images.',features:['Text-to-video','Video editing','Background removal','Motion brush','Gen-3 Alpha'],specialization:['video-gen','editing','creative'],website:'https://runwayml.com',bookmarked:false,ts:Date.now()},
+    {id:uid(),name:'Jasper',category:'writing',pricing:'premium',uses:'AI writing assistant built for marketing teams to generate blog posts, ad copy, email campaigns, and social content.',features:['Blog writing','Ad copy','Brand voice','50+ templates','SEO mode'],specialization:['copywriting','marketing','content'],website:'https://jasper.ai',bookmarked:false,ts:Date.now()},
+  ];
+  save();
+}
+
+// ─── SHEETS CONFIG ───────────────────────────────────────
+function saveCfg(){
+  localStorage.setItem('nv3_webhook',document.getElementById('spWebhook').value.trim());
+  localStorage.setItem('nv3_sheet',document.getElementById('spSheet').value.trim());
+  updateStatus();
+}
+function updateStatus(){
+  const url=localStorage.getItem('nv3_webhook')||'';
+  const el=document.getElementById('spStatus');
+  if(url){el.className='sp-status ok';el.innerHTML='<div class="sp-dot"></div>Connected';}
+  else{el.className='sp-status';el.innerHTML='<div class="sp-dot"></div>Not configured';}
+}
+function openGuide(){document.getElementById('sheetsModal').style.display='flex';}
+function copyT(t){navigator.clipboard.writeText(t).then(()=>toast('Copied!','success'));}
+
+// ─── RENDER ──────────────────────────────────────────────
+function render(){
+  const q=(document.getElementById('searchInput').value||'').toLowerCase();
+  updateCounts();
+
+  const filtered=tools.filter(t=>{
+    if(activeFilter==='bookmarks'&&!t.bookmarked)return false;
+    if(CATS.includes(activeFilter)&&t.category!==activeFilter)return false;
+    if(q){
+      const blob=[t.name,t.uses,...(t.features||[]),...(t.specialization||[])].join(' ').toLowerCase();
+      if(!blob.includes(q))return false;
+    }
+    return true;
+  });
+
+  renderStats();
+
+  const wrap=document.getElementById('toolsWrap');
+  if(!filtered.length){
+    wrap.innerHTML=`<div class="empty"><div class="empty-ic">⬡</div><div class="empty-t">${q?'No results found':'No tools yet'}</div><div class="empty-s">${q?'Try a different search.':'Click "+ New Tool" to add your first AI tool.'}</div></div>`;
+    return;
+  }
+
+  // Determine groups
+  let groups;
+  if(CATS.includes(activeFilter)) groups=[activeFilter];
+  else groups=CATS.filter(c=>filtered.some(t=>t.category===c));
+
+  wrap.innerHTML=groups.map(cat=>{
+    const items=filtered.filter(t=>t.category===cat);
+    if(!items.length)return '';
+    return `<div class="cat-group">
+      <div class="cat-group-hdr">
+        <div class="cat-group-label">
+          <span class="cc-${cat}" style="font-size:16px">${CAT_ICONS[cat]}</span>
+          <span>${CAT_LABELS[cat]}</span>
+        </div>
+        <div class="cat-group-line"></div>
+        <div class="cat-group-count">${items.length} tool${items.length!==1?'s':''}</div>
+      </div>
+      <div class="${activeView==='grid'?'tools-grid':'tools-list'}">
+        ${items.map((t,i)=>renderCard(t,i,cat)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderCard(t,i,cat){
+  const specs=(t.specialization||[]).slice(0,4).map(s=>`<span class="spec-tag sp-${cat}">${s}</span>`).join('');
+  const feats=(t.features||[]).slice(0,5).map(f=>`<span class="feat-tag">${f}</span>`).join('');
+  const bm=t.bookmarked?'bm':'';
+
+  if(activeView==='list'){
+    return `<div class="tool-card lm" style="animation-delay:${i*.03}s" onclick="openDetail('${t.id}')">
+      <div class="avatar av-${cat}">${initials(t.name)}</div>
+      <div><div class="lm-name">${t.name}</div><div class="lm-uses">${(t.uses||'').slice(0,72)}…</div></div>
+      <span class="price-badge price-${t.pricing}">${t.pricing}</span>
+      ${t.website?`<a class="card-link" href="${t.website}" target="_blank" onclick="event.stopPropagation()">↗</a>`:'<span></span>'}
+      <div class="lm-acts" onclick="event.stopPropagation()">
+        <button class="ic-btn ${bm}" onclick="toggleBm('${t.id}')">${t.bookmarked?'★':'☆'}</button>
+        <button class="ic-btn" onclick="openEdit('${t.id}')">✎</button>
+        <button class="ic-btn del" onclick="delTool('${t.id}')">✕</button>
+      </div>
+    </div>`;
+  }
+
+  return `<div class="tool-card" style="animation-delay:${i*.04}s" onclick="openDetail('${t.id}')">
+    <div class="card-top">
+      <div class="avatar av-${cat}">${initials(t.name)}</div>
+      <div class="card-info">
+        <div class="card-name">${t.name}</div>
+        <div class="card-uses">${t.uses||''}</div>
+      </div>
+      <div class="card-actions" onclick="event.stopPropagation()">
+        <button class="ic-btn ${bm}" onclick="toggleBm('${t.id}')">${t.bookmarked?'★':'☆'}</button>
+        <button class="ic-btn" onclick="openEdit('${t.id}')">✎</button>
+        <button class="ic-btn del" onclick="delTool('${t.id}')">✕</button>
+      </div>
+    </div>
+    ${feats?`<div class="card-features">${feats}</div>`:''}
+    ${specs?`<div class="card-spec">${specs}</div>`:''}
+    <div class="card-footer">
+      <span class="price-badge price-${t.pricing}">${t.pricing}</span>
+      ${t.website?`<a class="card-link" href="${t.website}" target="_blank" onclick="event.stopPropagation()">Visit ↗</a>`:''}
+    </div>
+  </div>`;
+}
+
+function renderStats(){
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat-card"><div class="stat-val">${tools.length}</div><div class="stat-lbl">Total Tools</div><div class="stat-ic">⬡</div></div>
+    <div class="stat-card"><div class="stat-val">${tools.filter(t=>t.bookmarked).length}</div><div class="stat-lbl">Bookmarked</div><div class="stat-ic">★</div></div>
+    <div class="stat-card"><div class="stat-val">${tools.filter(t=>t.pricing==='free').length}</div><div class="stat-lbl">Free</div><div class="stat-ic">◈</div></div>
+    <div class="stat-card"><div class="stat-val">${new Set(tools.map(t=>t.category)).size}</div><div class="stat-lbl">Categories</div><div class="stat-ic">◌</div></div>`;
+}
+
+function updateCounts(){
+  const set=(id,n)=>{const e=document.getElementById(id);if(e)e.textContent=n;};
+  set('ct-all',tools.length);
+  set('ct-bookmarks',tools.filter(t=>t.bookmarked).length);
+  CATS.forEach(c=>set('ct-'+c,tools.filter(t=>t.category===c).length));
+}
+
+// ─── FILTER / VIEW ───────────────────────────────────────
+function setFilter(f,el){
+  activeFilter=f;
+  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  const lbl={all:'All Tools',bookmarks:'Bookmarks',...Object.fromEntries(CATS.map(c=>[c,CAT_LABELS[c]]))};
+  document.getElementById('pageTitle').textContent=lbl[f]||f;
+  render();
+}
+function setView(v){
+  activeView=v;
+  document.getElementById('vGrid').classList.toggle('active',v==='grid');
+  document.getElementById('vList').classList.toggle('active',v==='list');
+  render();
+}
+
+// ─── MODALS ──────────────────────────────────────────────
+function closeM(id){
+  document.getElementById(id).style.display='none';
+  if(id==='toolModal'){editId=null;tmpFeats=[];}
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeM('toolModal');closeM('detailModal');closeM('sheetsModal');}});
+
+// ─── NEW / EDIT ──────────────────────────────────────────
+function openNew(){
+  editId=null;tmpFeats=[];
+  document.getElementById('mTitle').textContent='Add New Tool';
+  ['fName','fUses','fTags','fWeb'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fCat').value='generative';
+  document.getElementById('fPrice').value='freemium';
+  document.getElementById('featInp').value='';
+  document.getElementById('fetchBar').style.display='none';
+  renderFeats();
+  document.getElementById('toolModal').style.display='flex';
+  setTimeout(()=>document.getElementById('fName').focus(),80);
+}
+function openEdit(id){
+  const t=tools.find(x=>x.id===id);if(!t)return;
+  editId=id;tmpFeats=[...(t.features||[])];
+  document.getElementById('mTitle').textContent='Edit Tool';
+  document.getElementById('fName').value=t.name||'';
+  document.getElementById('fCat').value=t.category||'generative';
+  document.getElementById('fPrice').value=t.pricing||'freemium';
+  document.getElementById('fUses').value=t.uses||'';
+  document.getElementById('fTags').value=(t.specialization||[]).join(', ');
+  document.getElementById('fWeb').value=t.website||'';
+  document.getElementById('featInp').value='';
+  document.getElementById('fetchBar').style.display='none';
+  renderFeats();
+  document.getElementById('toolModal').style.display='flex';
+}
+
+// ─── AUTO-FILL ───────────────────────────────────────────
+function nameTyped(v){
+  clearTimeout(nameTimer);
+  if(!editId&&v.length>=3) nameTimer=setTimeout(()=>autoFill(v),900);
+}
+async function autoFill(name){
+  const bar=document.getElementById('fetchBar'),msg=document.getElementById('fetchMsg');
+  bar.style.display='flex';msg.textContent=`Looking up "${name}"…`;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,messages:[{role:'user',content:`For the AI tool "${name}" return ONLY valid JSON no markdown:
+{"uses":"1-2 sentence what it does","features":["f1","f2","f3","f4","f5"],"specialization":["t1","t2","t3"],"pricing":"free|freemium|premium","website":"https://...","category":"generative|coding|writing|productivity|research|audio|video|other"}`}]})
+    });
+    const d=await r.json();
+    const txt=(d.content||[]).map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
+    const info=JSON.parse(txt);
+    if(!document.getElementById('fUses').value)document.getElementById('fUses').value=info.uses||'';
+    if(!document.getElementById('fWeb').value)document.getElementById('fWeb').value=info.website||'';
+    if(!document.getElementById('fTags').value)document.getElementById('fTags').value=(info.specialization||[]).join(', ');
+    if(info.category)document.getElementById('fCat').value=info.category;
+    if(info.pricing)document.getElementById('fPrice').value=info.pricing;
+    if(info.features?.length&&!tmpFeats.length){tmpFeats=info.features;renderFeats();}
+    msg.textContent='✓ Auto-filled! Review and save.';
+    setTimeout(()=>bar.style.display='none',2200);
+  }catch(e){
+    msg.textContent='Could not auto-fetch — fill in manually.';
+    setTimeout(()=>bar.style.display='none',2500);
+  }
+}
+
+// ─── FEATURES ────────────────────────────────────────────
+function addFeat(){
+  const inp=document.getElementById('featInp'),v=inp.value.trim();
+  if(v&&!tmpFeats.includes(v)){tmpFeats.push(v);renderFeats();}
+  inp.value='';inp.focus();
+}
+function rmFeat(i){tmpFeats.splice(i,1);renderFeats();}
+function renderFeats(){
+  document.getElementById('featsList').innerHTML=tmpFeats.map((f,i)=>
+    `<div class="ft">${f}<button onclick="rmFeat(${i})">✕</button></div>`).join('');
+}
+
+// ─── SAVE ────────────────────────────────────────────────
+async function saveTool(){
+  const name=document.getElementById('fName').value.trim();
+  const uses=document.getElementById('fUses').value.trim();
+  if(!name||!uses){toast('Name and Uses are required.','error');return;}
+  const t={
+    id:editId||uid(),name,
+    category:document.getElementById('fCat').value,
+    pricing:document.getElementById('fPrice').value,
+    uses,features:[...tmpFeats],
+    specialization:document.getElementById('fTags').value.split(',').map(s=>s.trim()).filter(Boolean),
+    website:document.getElementById('fWeb').value.trim(),
+    bookmarked:editId?(tools.find(x=>x.id===editId)?.bookmarked||false):false,
+    ts:editId?(tools.find(x=>x.id===editId)?.ts||Date.now()):Date.now()
+  };
+  if(editId)tools=tools.map(x=>x.id===editId?t:x); else tools.unshift(t);
+  save();closeM('toolModal');render();
+  toast(editId?'Tool updated.':'Tool added!','success');
+  if(!editId)await syncSheets(t);
+}
+
+// ─── DELETE / BOOKMARK ───────────────────────────────────
+function delTool(id){
+  if(!confirm('Delete this tool?'))return;
+  tools=tools.filter(t=>t.id!==id);save();render();toast('Deleted.','error');
+}
+function toggleBm(id){
+  tools=tools.map(t=>t.id===id?{...t,bookmarked:!t.bookmarked}:t);
+  save();render();
+}
+
+// ─── DETAIL ──────────────────────────────────────────────
+function openDetail(id){
+  const t=tools.find(x=>x.id===id);if(!t)return;
+  const cat=t.category;
+  const feats=(t.features||[]).map(f=>`<div class="d-feat">${f}</div>`).join('');
+  const specs=(t.specialization||[]).map(s=>`<span class="spec-tag sp-${cat}" style="font-size:11px;padding:3px 9px;">${s}</span>`).join('');
+  const ts=new Date(t.ts||Date.now()).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});
+  document.getElementById('detailInner').innerHTML=`
+    <div class="modal-hdr" style="justify-content:flex-end;padding-bottom:14px;">
+      <button class="modal-x" onclick="closeM('detailModal')">✕</button>
+    </div>
+    <div class="d-hero">
+      <div class="d-av av-${cat}">${initials(t.name)}</div>
+      <div style="flex:1">
+        <div class="d-name">${t.name}</div>
+        <div class="d-uses">${t.uses||''}</div>
+        <div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap;">
+          <span class="price-badge price-${t.pricing}">${t.pricing}</span>
+          ${specs}
+        </div>
+      </div>
+    </div>
+    <div class="d-body">
+      ${feats?`<div class="d-sec"><div class="d-sec-title">Features</div><div class="d-feats">${feats}</div></div>`:''}
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">Added ${ts}</div>
+    </div>
+    <div class="d-foot">
+      ${t.website?`<a class="btn-visit" href="${t.website}" target="_blank">Visit Website ↗</a>`:''}
+      <button class="btn-edit" onclick="closeM('detailModal');openEdit('${t.id}')">Edit</button>
+      <button class="ic-btn ${t.bookmarked?'bm':''}" style="margin-left:auto;width:34px;height:34px;" onclick="toggleBm('${t.id}');closeM('detailModal')">${t.bookmarked?'★':'☆'}</button>
+    </div>`;
+  document.getElementById('detailModal').style.display='flex';
+}
+
+// ─── SHEETS SYNC ─────────────────────────────────────────
+async function syncSheets(t){
+  const url=localStorage.getItem('nv3_webhook');if(!url)return;
+  const tid=toastLoad('Syncing to Sheets…');
+  try{
+    await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:t.name,uses:t.uses,features:(t.features||[]).join(', '),specialization:(t.specialization||[]).join(', '),website:t.website||'',category:t.category,pricing:t.pricing})
+    });
+    rmT(tid);toast('Synced to Google Sheets ✓','success');
+  }catch(e){rmT(tid);toast('Sheets sync failed','error');}
+}
+
+// ─── TOAST ───────────────────────────────────────────────
+function toast(msg,type='success'){
+  const id=uid(),el=document.createElement('div');
+  el.className='toast';el.id='t_'+id;
+  el.innerHTML=`<div class="tdot ${type}"></div><span>${msg}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3100);return id;
+}
+function toastLoad(msg){
+  const id=uid(),el=document.createElement('div');
+  el.className='toast';el.id='t_'+id;el.style.animation='tIn .25s ease';
+  el.innerHTML=`<div class="tdot loading"></div><span>${msg}</span>`;
+  document.getElementById('toasts').appendChild(el);return id;
+}
+function rmT(id){const el=document.getElementById('t_'+id);if(el)el.remove();}
+
+// ─── INIT ────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',()=>{
+  seed();
+  document.getElementById('spWebhook').value=localStorage.getItem('nv3_webhook')||'';
+  document.getElementById('spSheet').value=localStorage.getItem('nv3_sheet')||'';
+  updateStatus();render();
+});
+</script>
+</body>
+</html>
